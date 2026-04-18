@@ -1,6 +1,6 @@
 import express from 'express';
 import { z } from 'zod';
-import { query } from '../db.js';
+import { queryCustomer, queryStaff } from '../db.js';
 import { basicAuth } from '../middleware/auth.js';
 import { emailService } from '../services/EmailService.js';
 
@@ -30,14 +30,14 @@ router.post('/', async (req, res) => {
     const bookingDateObj = new Date(datePart);
     const dayOfWeek = bookingDateObj.getDay();
 
-    // Check operating hours
-    const specialCheck = await query('SELECT * FROM special_hours WHERE special_date = $1', [datePart]);
+    // Check operating hours using customer pool
+    const specialCheck = await queryCustomer('SELECT * FROM special_hours WHERE special_date = $1', [datePart]);
     let activeHours = null;
     
     if (specialCheck.rows.length > 0) {
       activeHours = specialCheck.rows[0];
     } else {
-      const standardCheck = await query('SELECT * FROM operating_hours WHERE day_of_week = $1', [dayOfWeek]);
+      const standardCheck = await queryCustomer('SELECT * FROM operating_hours WHERE day_of_week = $1', [dayOfWeek]);
       activeHours = standardCheck.rows[0];
     }
 
@@ -51,7 +51,7 @@ router.post('/', async (req, res) => {
 
     // Check if slot is available (prevent overbooking)
     // For this boilerplate, let's assume maximum 5 bookings per slot
-    const slotCheck = await query(
+    const slotCheck = await queryCustomer(
       "SELECT COUNT(*) FROM bookings WHERE booking_slot = $1 AND status != 'Cancelled'",
       [validatedData.booking_slot]
     );
@@ -61,7 +61,7 @@ router.post('/', async (req, res) => {
     }
 
     // Insert booking
-    const result = await query(
+    const result = await queryCustomer(
       `INSERT INTO bookings (customer_name, email, booking_slot, party_size) 
        VALUES ($1, $2, $3, $4) RETURNING *`,
       [
@@ -94,7 +94,7 @@ router.post('/', async (req, res) => {
 // Get all upcoming bookings (Staff Dashboard, protected)
 router.get('/', basicAuth, async (req, res) => {
   try {
-    const result = await query(
+    const result = await queryStaff(
       `SELECT * FROM bookings 
        WHERE booking_slot >= CURRENT_DATE 
        ORDER BY booking_slot ASC`
@@ -117,7 +117,7 @@ router.patch('/:id', basicAuth, async (req, res) => {
       return res.status(400).json({ error: 'Invalid status' });
     }
 
-    const result = await query(
+    const result = await queryStaff(
       `UPDATE bookings SET status = $1 WHERE uuid = $2 RETURNING *`,
       [status, id]
     );

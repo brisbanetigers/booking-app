@@ -1,6 +1,6 @@
 import express from 'express';
 import { z } from 'zod';
-import { query } from '../db.js';
+import { queryCustomer, queryStaff } from '../db.js';
 import { basicAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -8,8 +8,8 @@ const router = express.Router();
 // GET all hours (public)
 router.get('/', async (req, res) => {
   try {
-    const standardResult = await query('SELECT * FROM operating_hours ORDER BY day_of_week ASC');
-    const specialResult = await query('SELECT * FROM special_hours WHERE special_date >= CURRENT_DATE ORDER BY special_date ASC');
+    const standardResult = await queryCustomer('SELECT * FROM operating_hours ORDER BY day_of_week ASC');
+    const specialResult = await queryCustomer('SELECT * FROM special_hours WHERE special_date >= CURRENT_DATE ORDER BY special_date ASC');
     
     res.json({
       standard: standardResult.rows,
@@ -34,18 +34,18 @@ router.post('/standard', basicAuth, async (req, res) => {
     const data = schema.parse(req.body);
     
     // Batch update using transactions
-    await query('BEGIN');
+    await queryStaff('BEGIN');
     for (const day of data) {
-      await query(
+      await queryStaff(
         `UPDATE operating_hours SET open_time = $1, close_time = $2, is_closed = $3 WHERE day_of_week = $4`,
         [day.open_time, day.close_time, day.is_closed, day.day_of_week]
       );
     }
-    await query('COMMIT');
+    await queryStaff('COMMIT');
     
     res.json({ success: true });
   } catch (error) {
-    await query('ROLLBACK');
+    await queryStaff('ROLLBACK');
     if (error instanceof z.ZodError) return res.status(400).json({ error: error.errors });
     console.error('Error updating standard hours:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -69,7 +69,7 @@ router.post('/special', basicAuth, async (req, res) => {
     const openTime = data.open_time || '00:00';
     const closeTime = data.close_time || '00:00';
 
-    await query(
+    await queryStaff(
       `INSERT INTO special_hours (special_date, open_time, close_time, is_closed, reason)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (special_date) 
@@ -92,7 +92,7 @@ router.post('/special', basicAuth, async (req, res) => {
 router.delete('/special/:date', basicAuth, async (req, res) => {
   try {
     const { date } = req.params;
-    await query(`DELETE FROM special_hours WHERE special_date = $1`, [date]);
+    await queryStaff(`DELETE FROM special_hours WHERE special_date = $1`, [date]);
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting special hours:', error);

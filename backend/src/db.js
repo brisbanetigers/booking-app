@@ -6,22 +6,36 @@ import { fileURLToPath } from 'url';
 const { Pool } = pg;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const pool = new Pool({
+// Configuration for public booking routes
+export const customerPool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  max: 50,
+  idleTimeoutMillis: 30000,
 });
 
-pool.on('error', (err, client) => {
+// Configuration for secure staff administration
+export const staffPool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 10,
+  idleTimeoutMillis: 30000,
+});
+
+const errHandler = (err, client) => {
   console.error('Unexpected error on idle client', err);
   process.exit(-1);
-});
+};
 
-export const query = (text, params) => pool.query(text, params);
+customerPool.on('error', errHandler);
+staffPool.on('error', errHandler);
+
+export const queryCustomer = (text, params) => customerPool.query(text, params);
+export const queryStaff = (text, params) => staffPool.query(text, params);
 
 export const initializeDatabase = async () => {
   const schemaPath = path.join(__dirname, 'schema.sql');
   const schema = fs.readFileSync(schemaPath, 'utf8');
   try {
-    await pool.query(schema);
+    await staffPool.query(schema);
     console.log('Database schema initialized.');
   } catch (err) {
     console.error('Error initializing database schema:', err);
