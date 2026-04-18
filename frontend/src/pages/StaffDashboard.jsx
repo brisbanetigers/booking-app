@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchBookings, updateBookingStatus, getOperatingHours, updateStandardHours, updateSpecialHours, deleteSpecialHours } from '../services/api';
-import { Lock, LogOut, Check, X, UserCheck, CalendarDays, Clock, Trash2, Users } from 'lucide-react';
+import { Lock, LogOut, Check, X, UserCheck, CalendarDays, Clock, Trash2, Users, Phone, Mail } from 'lucide-react';
 
 export default function StaffDashboard() {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -175,7 +175,17 @@ export default function StaffDashboard() {
                     <td>{new Date(booking.booking_slot).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' })}</td>
                     <td>
                       <div style={{ fontWeight: 500 }}>{booking.customer_name}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{booking.email}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        <Mail size={12} style={{verticalAlign: 'middle', marginRight: '4px'}}/> {booking.email}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        <Phone size={12} style={{verticalAlign: 'middle', marginRight: '4px'}}/> 
+                        {booking.mobile_number ? (
+                          <a href={`tel:${booking.mobile_number}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                            {booking.mobile_number}
+                          </a>
+                        ) : 'No Number'}
+                      </div>
                     </td>
                     <td>{booking.party_size}</td>
                     <td><span className={`status-badge status-${booking.status.toLowerCase()}`}>{booking.status}</span></td>

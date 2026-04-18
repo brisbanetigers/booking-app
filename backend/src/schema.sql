@@ -6,9 +6,11 @@ CREATE TABLE IF NOT EXISTS bookings (
     email VARCHAR(255) NOT NULL,
     booking_slot TIMESTAMP WITH TIME ZONE NOT NULL,
     party_size INTEGER NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'Pending',
+    status VARCHAR(50) DEFAULT 'Pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS mobile_number VARCHAR(50);
 
 CREATE TABLE IF NOT EXISTS operating_hours (
     day_of_week INTEGER PRIMARY KEY, -- 0=Sun, 1=Mon, ..., 6=Sat

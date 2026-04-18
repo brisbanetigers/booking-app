@@ -2,14 +2,16 @@ import express from 'express';
 import { z } from 'zod';
 import { queryCustomer, queryStaff } from '../db.js';
 import { basicAuth } from '../middleware/auth.js';
-import { emailService } from '../services/EmailService.js';
+import { webhookService } from '../services/WebhookService.js';
+import { googleSheetsService } from '../services/GoogleSheetsService.js';
 
 const router = express.Router();
 
 // Validation schema for incoming booking
 const bookingSchema = z.object({
-  customer_name: z.string().min(2, "Name is too short"),
+  customer_name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
+  mobile_number: z.string().min(5, "Valid mobile number required"),
   booking_slot: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid date format",
   }),
@@ -62,11 +64,12 @@ router.post('/', async (req, res) => {
 
     // Insert booking
     const result = await queryCustomer(
-      `INSERT INTO bookings (customer_name, email, booking_slot, party_size) 
-       VALUES ($1, $2, $3, $4) RETURNING *`,
+      `INSERT INTO bookings (customer_name, email, mobile_number, booking_slot, party_size) 
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [
         validatedData.customer_name,
         validatedData.email,
+        validatedData.mobile_number,
         validatedData.booking_slot,
         validatedData.party_size
       ]
@@ -74,12 +77,12 @@ router.post('/', async (req, res) => {
 
     const newBooking = result.rows[0];
 
-    // Trigger email notification async (don't await so we respond faster)
-    emailService.sendBookingConfirmation(
-      newBooking.email, 
-      newBooking.customer_name, 
-      newBooking
-    );
+    // Asynchronously log to Google Sheets and emit Pabbly Webhook without blocking the response
+    webhookService.emitEvent('BOOKING_CREATED', newBooking);
+    
+    googleSheetsService.appendBooking(validatedData).catch(err => {
+      console.error('Non-fatal error: Failed to pipe to Google Sheets', err);
+    });
 
     res.status(201).json(newBooking);
   } catch (error) {
@@ -122,11 +125,18 @@ router.patch('/:id', basicAuth, async (req, res) => {
       [status, id]
     );
 
-    if (result.rowCount === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Booking not found' });
     }
 
-    res.json(result.rows[0]);
+    const updatedBooking = result.rows[0];
+
+    // If staff manually marks it as cancelled, emit a webhook so Pabbly can email an apology/reschedule link!
+    if (status === 'Cancelled') {
+      webhookService.emitEvent('BOOKING_CANCELLED', updatedBooking);
+    }
+
+    res.json(updatedBooking);
   } catch (error) {
     console.error('Error updating booking:', error);
     res.status(500).json({ error: 'Internal Server Error' });

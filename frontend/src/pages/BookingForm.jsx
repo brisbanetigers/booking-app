@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { submitBooking, getOperatingHours } from '../services/api';
-import { CalendarDays, Users, Mail, User, Clock, Info } from 'lucide-react';
+import { CalendarDays, Users, Mail, User, Clock, Info, Phone } from 'lucide-react';
 
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -11,6 +11,7 @@ export default function BookingForm() {
   const [formData, setFormData] = useState({
     customer_name: '',
     email: '',
+    mobile_number: '',
     booking_date: null,
     booking_time: '',
     party_size: 2,
@@ -152,6 +153,7 @@ export default function BookingForm() {
       await submitBooking({
         customer_name: formData.customer_name,
         email: formData.email,
+        mobile_number: formData.mobile_number,
         booking_slot: dateTimeString,
         party_size: parseInt(formData.party_size, 10),
       });
@@ -160,6 +162,7 @@ export default function BookingForm() {
       setFormData({
         customer_name: '',
         email: '',
+        mobile_number: '',
         booking_date: null,
         booking_time: '',
         party_size: 2,
@@ -197,12 +200,22 @@ export default function BookingForm() {
           <input type="text" id="customer_name" name="customer_name" className="form-input" placeholder="John Doe" value={formData.customer_name} onChange={handleChange} required minLength="2" />
         </div>
 
-        <div className="form-group">
-          <label className="form-label" htmlFor="email">
-            <Mail size={16} style={{display:'inline', marginRight:'6px', verticalAlign:'text-bottom'}}/>
-            Email Address
-          </label>
-          <input type="email" id="email" name="email" className="form-input" placeholder="john@example.com" value={formData.email} onChange={handleChange} required />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="form-group">
+            <label className="form-label" htmlFor="email">
+              <Mail size={16} style={{display:'inline', marginRight:'6px', verticalAlign:'text-bottom'}}/>
+              Email Address
+            </label>
+            <input type="email" id="email" name="email" className="form-input" placeholder="john@example.com" value={formData.email} onChange={handleChange} required />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="mobile_number">
+              <Phone size={16} style={{display:'inline', marginRight:'6px', verticalAlign:'text-bottom'}}/>
+              Mobile Number
+            </label>
+            <input type="tel" id="mobile_number" name="mobile_number" className="form-input" placeholder="0400 000 000" value={formData.mobile_number} onChange={handleChange} required minLength="5"/>
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

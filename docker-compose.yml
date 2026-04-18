@@ -25,11 +25,11 @@ services:
     container_name: antigravity_backend
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-antigravity}
-      PORT: 3000
-      SMTP_HOST: ${SMTP_HOST:-smtp.example.com}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER:-user}
-      SMTP_PASS: ${SMTP_PASS:-pass}
+      DB_NAME: ${DB_NAME:-antigravity}
+      PABBLY_WEBHOOK_URL: ${PABBLY_WEBHOOK_URL}
+      GOOGLE_SHEET_ID: ${GOOGLE_SHEET_ID}
+      GOOGLE_CLIENT_EMAIL: ${GOOGLE_CLIENT_EMAIL}
+      GOOGLE_PRIVATE_KEY: ${GOOGLE_PRIVATE_KEY}
       STAFF_USERNAME: ${STAFF_USERNAME:-admin}
       STAFF_PASSWORD: ${STAFF_PASSWORD:-admin}
     ports:

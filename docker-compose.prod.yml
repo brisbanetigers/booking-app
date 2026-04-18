@@ -23,11 +23,10 @@ services:
       - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-mypassword}@db:5432/${DB_NAME:-antigravity}
       - STAFF_USERNAME=${STAFF_USERNAME:-admin}
       - STAFF_PASSWORD=${STAFF_PASSWORD:-admin}
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASS=${SMTP_PASS}
-      - SMTP_FROM=${SMTP_FROM}
+      - PABBLY_WEBHOOK_URL=${PABBLY_WEBHOOK_URL}
+      - GOOGLE_SHEET_ID=${GOOGLE_SHEET_ID}
+      - GOOGLE_CLIENT_EMAIL=${GOOGLE_CLIENT_EMAIL}
+      - GOOGLE_PRIVATE_KEY=${GOOGLE_PRIVATE_KEY}
     depends_on:
       db:
         condition: service_healthy
